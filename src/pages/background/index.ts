@@ -24,16 +24,26 @@ browser.runtime.onConnect.addListener((port) => {
         } catch (error) {
           console.error('[Logseq Copilot] Error during search:', error);
 
+          let errorMsg = 'Search failed';
+
           // If it's a Response object, try to get more details
           if (error instanceof Response) {
             const errorText = await error.text().catch(() => 'Could not read error text');
             console.error('[Logseq Copilot] Error response status:', error.status);
             console.error('[Logseq Copilot] Error response text:', errorText);
+            errorMsg = `HTTP error ${error.status}`;
+          } else if (error instanceof Error) {
+            errorMsg = error.message;
+          }
+
+          // Provide helpful message if server is not running
+          if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError')) {
+            errorMsg = 'HTTP server is not running. Start it with: python3 logseq_server.py';
           }
 
           port.postMessage({
             status: 500,
-            msg: error.message || error.toString() || 'Search failed',
+            msg: errorMsg,
             response: null
           });
         }
@@ -57,22 +67,10 @@ browser.runtime.onMessage.addListener((msg, sender) => {
     quickCapture('');
   } else if (msg.type === 'open-page') {
     openPage(msg.url);
-  } else if (msg.type === 'change-block-marker') {
-    changeBlockMarker(msg.uuid, msg.marker);
   } else {
     console.debug(msg);
   }
 });
-
-const changeBlockMarker = async (uuid: string, marker: string) => {
-  const tab = await getCurrentTab();
-  if (!tab) {
-    return;
-  }
-  const logseqService = await getLogseqService();
-  const result = await logseqService.changeBlockMarker(uuid, marker);
-  browser.tabs.sendMessage(tab.id!, result);
-};
 
 const getCurrentTab = async () => {
   const tab = await browser.tabs.query({ active: true, currentWindow: true });

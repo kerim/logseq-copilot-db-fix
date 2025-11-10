@@ -1,8 +1,7 @@
 import { LogseqBlockType } from '@/types/logseqBlock';
 import LogseqPageLink from './LogseqPage';
-import Browser from 'webextension-polyfill';
 import styles from './logseq.module.scss';
-import React, { useEffect } from 'react';
+import React from 'react';
 
 type LogseqBlockProps = {
   graph: string;
@@ -16,80 +15,84 @@ export const LogseqBlock = ({ graph, blocks }: LogseqBlockProps) => {
     return <></>;
   }
 
-  const [checked, setChecked] = React.useState(false);
-  const [status, setStatus] = React.useState('');
-
   const block = blocks[0]; // TODO: randomyl picking first item - need to change later
 
-  const statusUpdate = (marker: string) => {
-    switch (marker) {
-      case 'TODO':
-      case 'LATER':
-      case 'DOING':
-      case 'NOW':
-        setChecked(false);
-        setStatus(marker);
-        break;
-      case 'DONE':
-        setChecked(true);
-        setStatus(marker);
-        break;
-      case 'CANCELED':
-        setChecked(true);
-        setStatus(marker);
-    }
-  }
+  // Read-only status/marker display for DB graphs
+  // In DB graphs, status is a property, not a marker in content
+  const statusBadgeRender = (block: LogseqBlockType) => {
+    // Prefer status from DB graph properties
+    const displayStatus = block.status || block.marker;
 
-  const processEvent = (message: { type: string, uuid: string, status: string, marker: string, msg?: string }) => {
-    if (message.type === 'change-block-marker-result' && message.uuid === block.uuid && message.status === "success") {
-      statusUpdate(message.marker);
-    }
-
-  }
-
-  useEffect(() => {
-    Browser.runtime.onMessage.addListener(processEvent)
-    statusUpdate(block.marker)
-  }, []);
-
-  const updateBlock = (marker: string) => {
-    Browser.runtime.sendMessage({ type: 'change-block-marker', marker: marker, uuid: block.uuid })
-  };
-
-  const markerStatusChange = (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-  ) => {
-    let marker = '';
-    if (status === 'TODO') {
-      marker = 'DOING'
-    } else if (status === 'DOING') {
-      marker = 'TODO'
-    } else if (status === 'NOW') {
-      marker = 'LATER'
-    } else if (status === 'LATER') {
-      marker = 'NOW'
-    }
-    updateBlock(marker)
-  };
-
-  const markerCheck = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let marker = 'TODO';
-    if (checked) {
-      marker = 'TODO'
-    } else {
-      marker = 'DONE';
-    }
-    updateBlock(marker)
-  };
-
-  const markerRender = (marker: string) => {
-    if (!marker) {
+    if (!displayStatus) {
       return <></>;
     }
+
+    const isCompleted = displayStatus === 'DONE' ||
+                        displayStatus === 'Done' ||
+                        displayStatus === 'CANCELED' ||
+                        displayStatus === 'Canceled';
+
+    // Determine badge color based on status
+    let badgeColor = 'gray';
+    if (displayStatus === 'TODO' || displayStatus === 'Todo' || displayStatus === 'Backlog') {
+      badgeColor = 'blue';
+    } else if (displayStatus === 'DOING' || displayStatus === 'Doing') {
+      badgeColor = 'orange';
+    } else if (displayStatus === 'DONE' || displayStatus === 'Done') {
+      badgeColor = 'green';
+    } else if (displayStatus === 'CANCELED' || displayStatus === 'Canceled') {
+      badgeColor = 'red';
+    } else if (displayStatus === 'In Review' || displayStatus === 'REVIEW') {
+      badgeColor = 'purple';
+    }
+
     return (
       <div className={styles.blockMarker}>
-        <input className={styles.blockMarkerCheckbox} type="checkbox" checked={checked} onChange={markerCheck} />
-        <button className={styles.blockMarkerStatus} onClick={markerStatusChange}>{status}</button>
+        <input
+          className={styles.blockMarkerCheckbox}
+          type="checkbox"
+          checked={isCompleted}
+          disabled={true}
+          readOnly={true}
+        />
+        <span
+          className={styles.blockMarkerStatus}
+          style={{
+            backgroundColor: badgeColor,
+            color: 'white',
+            padding: '2px 6px',
+            borderRadius: '3px',
+            fontSize: '0.85em'
+          }}
+        >
+          {displayStatus}
+        </span>
+      </div>
+    );
+  };
+
+  // Render tags as badges (for DB graphs)
+  const tagsBadgeRender = (block: LogseqBlockType) => {
+    if (!block.tags || block.tags.length === 0) {
+      return <></>;
+    }
+
+    return (
+      <div style={{ display: 'flex', gap: '4px', marginLeft: '8px', flexWrap: 'wrap' }}>
+        {block.tags.map((tag, index) => (
+          <span
+            key={index}
+            style={{
+              backgroundColor: '#e0e0e0',
+              color: '#333',
+              padding: '2px 6px',
+              borderRadius: '3px',
+              fontSize: '0.8em',
+            }}
+          >
+            #{tag}
+          </span>
+        ))}
       </div>
     );
   };
@@ -116,21 +119,26 @@ export const LogseqBlock = ({ graph, blocks }: LogseqBlockProps) => {
         <div className={styles.blockBody}>
           <ul className={styles.blockContentList}>
             {blocks.map((block) => {
-              if (block.marker != null) {
+              // Show status badge for tasks (both DB and file-based)
+              const hasStatus = block.marker != null || block.status != null;
+
+              if (hasStatus) {
                 return (
                   <li key={block.uuid} className={styles.blockContentListItem}>
                     <div className={styles.blockContentRoot} >
-                      {markerRender(block.marker)}
+                      {statusBadgeRender(block)}
                       <div className={styles.blockContent} dangerouslySetInnerHTML={{ __html: block.html }} />
+                      {tagsBadgeRender(block)}
                       {toBlock(block)}
                     </div>
                   </li>
                 )
               }
               return (
-                <li className={styles.blockContentListItem}>
+                <li key={block.uuid} className={styles.blockContentListItem}>
                   <div className={styles.blockContentRoot} >
                     <div className={styles.blockContent} dangerouslySetInnerHTML={{ __html: block.html }} />
+                    {tagsBadgeRender(block)}
                     {toBlock(block)}
                   </div>
                 </li>

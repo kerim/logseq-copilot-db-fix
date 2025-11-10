@@ -13,6 +13,9 @@ export type LogseqBlockType = {
   format: string;
   marker: string;
   priority: string;
+  properties?: Record<string, any>; // DB graph properties
+  tags?: string[]; // DB graph tags
+  status?: string; // Task status for DB graphs (extracted from properties)
 };
 
 export type LogseqPageContentType = {

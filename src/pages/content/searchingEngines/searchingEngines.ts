@@ -226,10 +226,62 @@ export class Kagi extends SearchingEngine {
 
   gotElement(): Element {
     const container = document.createElement('div');
-    const asideElement = document.querySelector('div.right-content-box');
 
-    asideElement!.insertBefore(container, asideElement!.firstChild);
+    // Kagi doesn't have a built-in sidebar, so we create one
+    const mainElement = document.querySelector('main#main');
+
+    if (mainElement && mainElement.parentNode) {
+      // Remove existing sidebar if it exists (for page reloads)
+      const existingSidebar = document.getElementById('logseq-sidebar');
+      if (existingSidebar) {
+        existingSidebar.remove();
+      }
+
+      // Create a sidebar container
+      const sidebar = document.createElement('aside');
+      sidebar.id = 'logseq-sidebar';
+      sidebar.style.width = '372px';
+      sidebar.style.marginLeft = '24px';
+      sidebar.style.flexShrink = '0';
+
+      // Insert the logseq container into the sidebar
+      sidebar.appendChild(container);
+
+      // Modify the main element's parent to use flexbox
+      const parent = mainElement.parentNode as HTMLElement;
+      parent.style.display = 'flex';
+      parent.style.flexDirection = 'row';
+      parent.style.alignItems = 'flex-start';
+
+      // Insert sidebar after main content
+      mainElement.parentNode.insertBefore(sidebar, mainElement.nextSibling);
+    }
+
     return container;
+  }
+
+  reload(callback: Function): null {
+    // Watch for URL changes (Kagi uses client-side routing)
+    let lastQuery = this.getQuery();
+
+    const observer = new MutationObserver(() => {
+      const currentQuery = this.getQuery();
+      if (currentQuery !== lastQuery) {
+        lastQuery = currentQuery;
+        callback();
+      }
+    });
+
+    // Watch the main content area for changes
+    const targetNode = document.querySelector('main#main');
+    if (targetNode) {
+      observer.observe(targetNode, {
+        childList: true,
+        subtree: true
+      });
+    }
+
+    return null;
   }
 }
 export class Startpage extends SearchingEngine {

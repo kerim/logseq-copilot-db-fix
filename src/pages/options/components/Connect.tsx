@@ -9,6 +9,7 @@ import {
   Link,
   NumberInput,
   NumberInputField,
+  Select,
 } from '@chakra-ui/react';
 import React, { useEffect } from 'react';
 
@@ -26,8 +27,10 @@ export const LogseqConnectOptions = () => {
   const [buttonMessage, setButtonMessage] = React.useState('Connect');
   const [showToken, setShowToken] = React.useState(false);
   const [logseqConfig, setLogseqConfig] = React.useState<LogseqCopliotConfig>();
+  const [availableGraphs, setAvailableGraphs] = React.useState<string[]>([]);
+  const [loadingGraphs, setLoadingGraphs] = React.useState(false);
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setLogseqConfig({
       ...logseqConfig,
       [e.target.name]: e.target.value,
@@ -51,7 +54,7 @@ export const LogseqConnectOptions = () => {
       // new URL(logseqConfig!.logseqHost);
     } catch (error) {
       setConnected(false);
-      setButtonMessage('Logseq Host is not a URL!');
+      setButtonMessage('HTTP Server Host is not a URL!');
       return;
     }
 
@@ -60,14 +63,37 @@ export const LogseqConnectOptions = () => {
         logseqAuthToken: logseqConfig!.logseqAuthToken,
         logseqHostName: logseqConfig?.logseqHostName,
         logseqPort: logseqConfig?.logseqPort,
+        graphName: logseqConfig?.graphName,
       });
-      if (await checkConnection()) {
-        const service = await getLogseqService();
-        const graph = await service.getGraph();
-        window.location = `logseq://graph/${graph!.name}`;
-      }
+      await checkConnection();
+      // Don't open Logseq - we're using HTTP server, not the Logseq app
     });
     promise.then(console.log).catch(console.error);
+  };
+
+  const loadGraphs = async () => {
+    setLoadingGraphs(true);
+    try {
+      const { logseqHostName, logseqPort } = logseqConfig || { logseqHostName: 'localhost', logseqPort: 8765 };
+      const url = `http://${logseqHostName}:${logseqPort}/list`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.success) {
+        // Parse graph names from output
+        const lines = data.stdout.split('\n');
+        const graphNames = lines
+          .filter((line: string) => line.trim() && !line.includes(':') &&
+                  line.trim() !== 'DB Graphs' && line.trim() !== 'File Graphs')
+          .map((line: string) => line.trim());
+
+        setAvailableGraphs(graphNames);
+      }
+    } catch (error) {
+      console.error('Failed to load graphs:', error);
+    } finally {
+      setLoadingGraphs(false);
+    }
   };
 
   useEffect(() => {
@@ -82,6 +108,8 @@ export const LogseqConnectOptions = () => {
         }
         const promise = new Promise(async () => {
           await checkConnection();
+          // Load available graphs after connection check
+          await loadGraphs();
         });
         promise.then(console.log).catch(console.error);
       });
@@ -91,15 +119,21 @@ export const LogseqConnectOptions = () => {
   const checkConnection = async (): Promise<boolean> => {
     setLoading(true);
     const service = await getLogseqService();
-    const resp = await service.showMsg('Logseq Copliot Connect!');
+    const resp = await service.showMsg('Logseq Copilot HTTP Connect!');
     const connectStatus = resp.msg === 'success';
     setConnected(connectStatus);
     if (connectStatus) {
       const version = await service.getVersion();
-      setButtonMessage(`Connected to Logseq v${version}!`);
+      setButtonMessage(`Connected to HTTP Server (${version})!`);
     } else {
       setConnected(false);
-      setButtonMessage(resp.msg);
+      // Provide helpful error message
+      const errorMsg = resp.msg || 'Connection failed';
+      if (errorMsg.includes('not running') || errorMsg.includes('not accessible')) {
+        setButtonMessage('HTTP Server not running. Start it with: python3 logseq_server.py');
+      } else {
+        setButtonMessage(errorMsg);
+      }
     }
     setLoading(false);
     return connectStatus;
@@ -107,7 +141,7 @@ export const LogseqConnectOptions = () => {
 
   return (
     <>
-      <Heading size={'lg'}>Logseq Connect</Heading>
+      <Heading size={'lg'}>Logseq HTTP Server Connect</Heading>
       <Grid
         gridTemplateColumns={'1fr 1fr 1fr'}
         alignItems={'center'}
@@ -115,13 +149,13 @@ export const LogseqConnectOptions = () => {
         columnGap={2}
       >
         <Text gridColumn={'1 / span 2'} fontSize="sm">
-          Host
+          HTTP Server Host
         </Text>
         <Text fontSize="sm">Port (1 ~ 65535)</Text>
         <Input
           gridColumn={'1 / span 2'}
           name="logseqHostName"
-          placeholder="Logseq Host"
+          placeholder="localhost"
           onChange={onChange}
           value={logseqConfig?.logseqHostName}
         />
@@ -129,27 +163,52 @@ export const LogseqConnectOptions = () => {
           max={65535}
           min={1}
           name="logseqPort"
-          placeholder="Logseq Host"
+          placeholder="8765"
           onChange={changeLogseqPort}
           value={logseqConfig?.logseqPort}
         >
           <NumberInputField />
         </NumberInput>
-        <Text fontSize="sm">Authorization Token</Text>
-        <InputGroup gridColumn={'1 / span 3'}>
-          <Input
-            name="logseqAuthToken"
-            type={showToken ? 'text' : 'password'}
+        <Text gridColumn={'1 / span 2'} fontSize="sm">
+          Graph Name
+        </Text>
+        <Button
+          size="sm"
+          onClick={loadGraphs}
+          isLoading={loadingGraphs}
+          isDisabled={!logseqConfig?.logseqHostName}
+        >
+          Refresh Graphs
+        </Button>
+        {availableGraphs.length > 0 ? (
+          <Select
+            gridColumn={'1 / span 3'}
+            name="graphName"
+            placeholder="-- Select a graph --"
             onChange={onChange}
-            value={logseqConfig?.logseqAuthToken}
-            placeholder="Logseq Authorization Token"
+            value={logseqConfig?.graphName}
+          >
+            {availableGraphs.map((graph) => (
+              <option key={graph} value={graph}>
+                {graph}
+              </option>
+            ))}
+          </Select>
+        ) : (
+          <Input
+            gridColumn={'1 / span 3'}
+            name="graphName"
+            placeholder="my-graph (or click Refresh Graphs)"
+            onChange={onChange}
+            value={logseqConfig?.graphName}
           />
-          <InputRightElement width="4.5rem">
-            <Button h="1.75rem" size="sm" onClick={triggerShowToken}>
-              {showToken ? 'Hide' : 'Show'}
-            </Button>
-          </InputRightElement>
-        </InputGroup>
+        )}
+        <Text gridColumn={'1 / span 3'} fontSize="xs" color="gray.500">
+          Note: The HTTP server does not require an authorization token. Leave the field below empty.
+        </Text>
+        <Text gridColumn={'1 / span 3'} fontSize="xs" color="blue.600" fontWeight="medium">
+          ⚠️ Make sure the HTTP server is running first: python3 logseq_server.py
+        </Text>
         <Button
           gridColumn={'1 / span 3'}
           onClick={save}
@@ -162,9 +221,9 @@ export const LogseqConnectOptions = () => {
         <Text gridColumn={'1 / span 3'} justifySelf={'end'}>
           <Link
             color={!connected ? 'red' : undefined}
-            href="https://logseq-copilot.eindex.me/docs/setup"
+            href="https://github.com/kerim/logseq-http-server"
           >
-            Guide to Connection
+            HTTP Server Setup Guide
           </Link>
         </Text>
       </Grid>

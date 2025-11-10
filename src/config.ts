@@ -6,6 +6,7 @@ export type LogseqCopliotConfig = {
   logseqHostName: string;
   logseqPort: number;
   logseqAuthToken: string;
+  graphName: string;
   enableClipNoteFloatButton: boolean;
   clipNoteLocation: string;
   clipNoteCustomPage: string;
@@ -16,10 +17,11 @@ export const getLogseqCopliotConfig =
   async (): Promise<LogseqCopliotConfig> => {
     const {
       version = '',
-      logseqHost = 'http://localhost:12315',
+      logseqHost = 'http://localhost:8765',
       logseqHostName = 'localhost',
-      logseqPort = 12315,
+      logseqPort = 8765,
       logseqAuthToken = '',
+      graphName = '',
       enableClipNoteFloatButton = false,
       clipNoteLocation = "journal",
       clipNoteCustomPage = "",
@@ -32,6 +34,7 @@ export const getLogseqCopliotConfig =
       logseqHostName,
       logseqPort,
       logseqAuthToken,
+      graphName,
       enableClipNoteFloatButton,
       clipNoteLocation,
       clipNoteCustomPage,

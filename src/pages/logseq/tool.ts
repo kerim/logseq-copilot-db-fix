@@ -1,14 +1,10 @@
 import { LogseqBlockType } from '../../types/logseqBlock';
 
 import { marked } from 'marked';
-import LogseqClient from './client';
-import LogseqDBService from './db/service';
-import LogseqService from './normal/service';
+import HttpServerService from './httpServerService';
 import { LogseqServiceInterface } from './interfaces';
 
-const client = new LogseqClient();
-const logseqServiceDB = new LogseqDBService();
-const logseqService = new LogseqService();
+const httpServerService = new HttpServerService();
 
 export const cleanBlock = (block: LogseqBlockType): string => {
   let result = block.content;
@@ -100,13 +96,6 @@ export const renderBlock = (
 };
 
 export const getLogseqService = async (): Promise<LogseqServiceInterface> => {
-  try {
-    const resp = await client.isDBGraph()
-    if (resp === "true" || resp === true || resp === false){
-      return logseqServiceDB;
-    }
-  } catch (error) {
-    
-  }
-  return logseqService;
+  // Always return HTTP server service
+  return httpServerService;
 };

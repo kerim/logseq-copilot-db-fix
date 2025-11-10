@@ -15,6 +15,9 @@ export const LogseqCopliot = ({ connect }: LogseqCopliotProps) => {
 
   connect.onMessage.addListener(
     (resp: LogseqResponseType<LogseqSearchResult>) => {
+      console.log('[Logseq Copilot Content] Received response:', resp);
+      console.log('[Logseq Copilot Content] Response msg:', resp.msg);
+      console.log('[Logseq Copilot Content] Response data:', resp.response);
       setMsg(resp.msg);
       setLogseqSearchResult(resp.response);
     },

@@ -3,6 +3,7 @@ export type LogseqPageIdenity = {
   id: number;
   uuid: string;
   originalName?: string;
+  'journal-day'?: number; // YYYYMMDD format, only present for journal pages
 };
 
 export type LogseqBlockType = {

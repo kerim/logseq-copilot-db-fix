@@ -2,6 +2,7 @@ import { LogseqBlockType } from '../../types/logseqBlock';
 import HttpServerClient from './httpServerClient';
 import { renderBlock } from './tool';
 import { LogseqServiceInterface } from './interfaces';
+import { getLogseqSidekickConfig } from '../../config';
 
 export default class HttpServerService implements LogseqServiceInterface {
   public client: HttpServerClient = new HttpServerClient();
@@ -22,6 +23,7 @@ export default class HttpServerService implements LogseqServiceInterface {
 
   private async searchGraph(graphName: string, query: string) {
     const resp = await this.client.search(query);
+    const config = await getLogseqSidekickConfig();
     const response = {
       blocks: [],
       pages: [],
@@ -31,12 +33,26 @@ export default class HttpServerService implements LogseqServiceInterface {
 
     // Use blocks directly from search response - they already have page data
     if (resp.blocks) {
-      response.blocks = resp.blocks
-        .filter((item: any) => !item['page?'])
-        .map((item: any) => {
-          // Render each block with the query for highlighting
-          return renderBlock(item, graphName, query);
-        });
+      let filteredBlocks = resp.blocks.filter((item: any) => !item['page?']);
+      const totalBeforeJournalFilter = filteredBlocks.length;
+
+      // Filter out journal pages if setting is enabled
+      if (config.excludeJournalPages) {
+        filteredBlocks = filteredBlocks.filter(
+          (item: any) => !item.page['journal-day']
+        );
+        const journalPagesHidden = totalBeforeJournalFilter - filteredBlocks.length;
+        if (journalPagesHidden > 0) {
+          console.log(
+            `[Journal Filter] Showing ${filteredBlocks.length} results (${journalPagesHidden} journal pages hidden)`
+          );
+        }
+      }
+
+      response.blocks = filteredBlocks.map((item: any) => {
+        // Render each block with the query for highlighting
+        return renderBlock(item, graphName, query);
+      });
     }
 
     return response;

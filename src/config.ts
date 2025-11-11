@@ -11,6 +11,7 @@ export type LogseqSidekickConfig = {
   clipNoteLocation: string;
   clipNoteCustomPage: string;
   clipNoteTemplate: string;
+  excludeJournalPages: boolean; // Filter out journal pages from search results
 };
 
 export const getLogseqSidekickConfig =
@@ -26,7 +27,8 @@ export const getLogseqSidekickConfig =
       clipNoteLocation = "journal",
       clipNoteCustomPage = "",
       clipNoteTemplate = `#[[Clip]] [{{title}}]({{url}})
-{{content}}`
+{{content}}`,
+      excludeJournalPages = false,
     } = await Browser.storage.local.get();
     return {
       version,
@@ -39,6 +41,7 @@ export const getLogseqSidekickConfig =
       clipNoteLocation,
       clipNoteCustomPage,
       clipNoteTemplate,
+      excludeJournalPages,
     };
   };
 

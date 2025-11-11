@@ -1,7 +1,7 @@
 # Logseq DB Sidekick - Development TODO
 
-**Last Updated**: 2025-11-10 (Evening)
-**Current Version**: 0.0.8
+**Last Updated**: 2025-11-11
+**Current Version**: 0.0.9
 **Project Location**: `/Users/niyaro/Documents/Code/logseq-copilot-http`
 **HTTP Server Location**: `/Users/niyaro/Documents/Code/logseq-http-server`
 **GitHub Repo**: https://github.com/kerim/logseq-db-sidekick
@@ -68,34 +68,45 @@ src/components/logseq.module.scss
 
 ---
 
-### Phase 1: Exclude Journal Pages Setting
-**Status**: 🔜 Next Priority
+### Phase 1: Exclude Journal Pages Setting ✅ COMPLETED
+**Status**: ✅ Completed on 2025-11-11
 **Goal**: Add user setting to filter out journal pages from search results
 **Approach**: POC first, then integrate
 
 #### POC Tasks:
-- [ ] Create test script to identify journal pages in Logseq data
-- [ ] Test filtering logic with sample data
-- [ ] Verify journal page detection works with DB graphs
+- ✅ Created test script to identify journal pages in Logseq data
+- ✅ Tested filtering logic with sample data
+- ✅ Verified journal page detection works with DB graphs
 
 #### Integration Tasks:
-- [ ] Add setting to extension options page (`src/pages/options/Options.tsx`)
-- [ ] Store setting in extension storage (`src/config.ts`)
-- [ ] Modify search filtering in `httpServerService.ts` (line 34-40)
-- [ ] Update UI to show "X results (Y journal pages hidden)" when filter active
+- ✅ Added setting to extension options page (new `SearchSettings.tsx` component)
+- ✅ Stored setting in extension storage (`src/config.ts`)
+- ✅ Modified search filtering in `httpServerService.ts`
+- ✅ Added console logging to show filter count
 
-**Key Files**:
-- `src/pages/options/Options.tsx` - Settings UI
-- `src/config.ts` - Configuration storage (lines 1-50)
-- `src/pages/logseq/httpServerService.ts` - Search result filtering (lines 23-43)
-- `src/types/logseqBlock.ts` - Add journal flag to LogseqPageIdenity type
+**Key Discovery**:
+- Journal pages in DB graphs use `:block/journal-day` property (NOT `:block/journal?`)
+- Property value is integer in YYYYMMDD format (e.g., 20250606)
+- Regular pages do not have this property (undefined)
 
-**Technical Notes**:
-- Journal pages have property `journal?: boolean` in LogseqPageResponse
-- Check `block.page['journal?']` or similar property
-- Filter in `searchGraph()` method before rendering blocks
+**Files Modified**:
+- HTTP Server: `logseq_server.py` - Updated datalog query to include `:block/journal-day`
+- Extension:
+  - `src/types/logseqBlock.ts` - Added `'journal-day'?: number` to LogseqPageIdenity
+  - `src/config.ts` - Added `excludeJournalPages: boolean` setting
+  - `src/pages/logseq/httpServerClient.ts` - Pass journal-day in transformation
+  - `src/pages/logseq/httpServerService.ts` - Filtering logic with console logging
+  - `src/pages/options/components/SearchSettings.tsx` - New UI component
+  - `src/pages/options/Options.tsx` - Added SearchSettings component
+  - POC files in `poc/journal-filter/`
 
-**Version**: Will be 0.0.9
+**Test Results**:
+- Test query "sifo" returns 6 blocks total
+- 5 are from journal pages, 1 from regular page
+- With filter enabled: Shows only 1 result (83% reduction)
+- Console shows: "Showing 1 results (5 journal pages hidden)"
+
+**Version**: 0.0.9
 
 ---
 
@@ -285,8 +296,8 @@ Firefox: about:debugging → Load Temporary Add-on → build/firefox/manifest.js
 - **v0.0.2**: Fixed search using datalog queries
 - **v0.0.3-6**: Debugging EDN parsing and data transformation
 - **v0.0.7**: Working search with proper DB graph support
-- **v0.0.8**: **CURRENT** - Project renamed to "Logseq DB Sidekick", GitHub repo set up
-- **v0.0.9**: (Planned) Journal page filtering
+- **v0.0.8**: Project renamed to "Logseq DB Sidekick", GitHub repo set up
+- **v0.0.9**: **CURRENT** - Journal page filtering with user setting
 - **v0.1.0**: (Planned) Floating button UX
 - **v0.2.0**: (Planned) macOS background helper app
 

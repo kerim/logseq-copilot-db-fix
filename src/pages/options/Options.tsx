@@ -8,6 +8,7 @@ import {
 } from '@chakra-ui/react';
 import { LogseqConnectOptions } from './components/Connect';
 import { ClipNoteOptions } from './components/ClipNote';
+import { SearchSettings } from './components/SearchSettings';
 import styles from './Options.module.scss';
 
 const Options = () => {
@@ -26,6 +27,10 @@ const Options = () => {
         </Flex>
         <Flex direction={'column'} w={'40rem'} gap={2}>
           <LogseqConnectOptions />
+
+          <Divider />
+
+          <SearchSettings />
 
           <Divider />
 

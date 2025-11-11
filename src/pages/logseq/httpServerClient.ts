@@ -149,6 +149,7 @@ export default class HttpServerClient implements LogseqClientInterface {
                 uuid: page['block/uuid'] || '',
                 name: page['block/title'] || page['block/name'] || 'Unknown Page',
                 originalName: page['block/name'] || '',
+                'journal-day': page['block/journal-day'], // For filtering journal pages
               },
               html: '', // Will be set by renderBlock
               format: 'markdown',

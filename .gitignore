@@ -30,3 +30,16 @@ secrets.*.js
 .vscode/
 
 .envrc
+
+# Keep locally but not in repository
+/archived
+/poc
+
+# Debugging/analysis docs (keep locally only)
+/docs/ALERT_BUTTON_CACHE_HYPOTHESIS.md
+/docs/ALERT_BUTTON_FIX.md
+/docs/ALERT_BUTTON_RACE_CONDITION_ANALYSIS.md
+/docs/CONTINUATION_REPORT.md
+/docs/README-FIXES.md
+/docs/TODO.md
+/docs/@logseqcli - npm (1).md

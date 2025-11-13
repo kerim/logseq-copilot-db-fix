@@ -9,11 +9,11 @@ type FloatingButtonProps = {
 };
 
 const FloatingButton = ({ count, isOpen, onClick, hasGraph }: FloatingButtonProps) => {
-  // Show alert icon if no graph is configured
-  const displayContent = !hasGraph ? '⚠️' : count;
+  // Show alert icon if no graph configured, magnifying glass if 0 results, or count
+  const displayContent = !hasGraph ? '⚠️' : (count === 0 ? '🔍' : count);
   const ariaLabel = !hasGraph
     ? 'Logseq: Configuration needed'
-    : `Logseq results: ${count} items`;
+    : (count === 0 ? 'Logseq: Search your graph' : `Logseq results: ${count} items`);
 
   return (
     <div

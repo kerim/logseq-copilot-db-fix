@@ -153,16 +153,15 @@ export const LogseqSidekickComponent = ({ connect }: LogseqSidekickProps) => {
         />
       )}
 
-      {/* Side Panel - show when open and has results */}
-      {count > 0 && (
-        <SidePanel
-          isOpen={isPanelOpen}
-          onClose={() => setIsPanelOpen(false)}
-          graph={graph}
-          pages={pages}
-          blocks={blocks}
-        />
-      )}
+      {/* Side Panel - show when open (even with 0 results, for manual search) */}
+      <SidePanel
+        isOpen={isPanelOpen}
+        onClose={() => setIsPanelOpen(false)}
+        graph={graph}
+        pages={pages}
+        blocks={blocks}
+        connect={connect}
+      />
     </>
   );
 };

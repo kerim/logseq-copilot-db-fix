@@ -9,8 +9,13 @@ const LogseqSidekick = ({ graph, pages, blocks }) => {
   console.log('[Logseq DB Sidekick] Blocks length:', blocks?.length);
   console.log('[Logseq DB Sidekick] Pages length:', pages?.length);
 
-  const goOptionPage = () => {
-    Browser.runtime.sendMessage({ type: 'open-options' });
+  const goOptionPage = (e) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    console.log('[Logseq DB Sidekick] Gear icon clicked!');
+    Browser.runtime.sendMessage({ type: 'open-options' })
+      .then(() => console.log('[Logseq DB Sidekick] Options message sent'))
+      .catch(err => console.error('[Logseq DB Sidekick] Options message error:', err));
   };
 
   const groupedBlocks = blocks.reduce((groups, item) => {
@@ -43,9 +48,9 @@ const LogseqSidekick = ({ graph, pages, blocks }) => {
     }
     return <div className={styles.pages}>
       {pages.map((page) => {
-        if (!page) return <></>;
+        if (!page) return null;
         return (
-          <div key={page.name} className={styles.page}>
+          <div key={page.uuid} className={styles.page}>
             <LogseqPageLink
               graph={graph}
               page={page}
@@ -57,23 +62,36 @@ const LogseqSidekick = ({ graph, pages, blocks }) => {
 
   };
 
-  if (count() === 0) {
-    return (
-      <span>
-        Nothing here, Do some research with Logseq!{' '}
-        <a href={`logseq://graph/${graph}`}>Go</a>
-      </span>
-    );
-  }
-
   return (
     <>
       <div className={styles.sidekickCardHeader}>
         <span>Graph: {graph}</span>
-        <IconSettings onClick={goOptionPage} size={16} />
+        <button
+          onClick={goOptionPage}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+          aria-label="Open settings"
+        >
+          <IconSettings size={24} />
+        </button>
       </div>
-      {pagesRender()}
-      {blocksRender()}
+      {count() === 0 ? (
+        <span>
+          Nothing here, Do some research with Logseq!{' '}
+          <a href={`logseq://graph/${graph}`}>Go</a>
+        </span>
+      ) : (
+        <>
+          {pagesRender()}
+          {blocksRender()}
+        </>
+      )}
     </>
   );
 };

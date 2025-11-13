@@ -29,14 +29,13 @@ This fork differs from the original Logseq Copilot in several key ways:
 
 ## Features
 
-- 🔍 Show Logseq DB graph content when you search on popular search engines
-- 🌐 Supports Google, Bing, Ecosia, Baidu, Yandex, DuckDuckGo, SearX
-- 📊 Full-text search across all block content
-- 🔗 Direct links to open blocks in Logseq Desktop
-
-## TODO
-
-- [ ] **Search Bar Functionality**: Implement direct search within the extension UI. Currently, users can only see results when searching on supported search engines - a dedicated search bar in the extension popup would allow direct queries without needing to visit search engines first.
+- 🔍 **Automatic Search Detection**: Show Logseq DB graph content when you search on popular search engines
+- 🌐 **Multi-Engine Support**: Google, Bing, Ecosia, Baidu, Yandex, DuckDuckGo, SearX
+- 📝 **Manual Search**: Type queries directly in the extension's search bar to query your Logseq graph
+- 🎯 **Floating Button UI**: Collapsible floating button shows result count, expands to side panel
+- 📊 **Page Search**: Searches page titles across your entire DB graph
+- 🔗 **Direct Links**: Open pages in Logseq Desktop with one click
+- ⚙️ **Easy Configuration**: Simple settings panel for server connection and graph selection
 
 ## Installation
 

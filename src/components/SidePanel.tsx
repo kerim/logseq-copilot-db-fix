@@ -10,6 +10,7 @@ type SidePanelProps = {
   graph: string;
   pages: any[];
   blocks: any[];
+  connect: Browser.Runtime.Port;
 };
 
 const SidePanel = ({
@@ -18,6 +19,7 @@ const SidePanel = ({
   graph,
   pages,
   blocks,
+  connect,
 }: SidePanelProps) => {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -27,8 +29,12 @@ const SidePanel = ({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement search functionality
-    console.log('Search query:', searchQuery);
+
+    // Send search query to background via port
+    if (searchQuery.trim()) {
+      console.log('[Logseq DB Sidekick] Manual search query:', searchQuery);
+      connect.postMessage({ type: 'query', query: searchQuery.trim() });
+    }
   };
 
   const count = pages.length + blocks.length;
@@ -51,11 +57,6 @@ const SidePanel = ({
               Logseq Results {count > 0 && `(${count})`}
             </h2>
             <div className={styles.headerActions}>
-              <IconSettings
-                className={styles.iconButton}
-                onClick={goOptionPage}
-                size={20}
-              />
               <IconX
                 className={styles.closeButton}
                 onClick={onClose}
